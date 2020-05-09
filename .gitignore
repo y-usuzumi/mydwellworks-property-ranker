@@ -1,0 +1,4 @@
+.venv
+*.py[cdo]
+*.db
+__pycache__
