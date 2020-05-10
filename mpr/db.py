@@ -1,10 +1,12 @@
+from contextlib import contextmanager
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Boolean, Integer, BigInteger, Float, String, Text, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import select, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
+from .env import get_mod_spatialite_name
 
 Base = declarative_base()
 
@@ -16,12 +18,21 @@ class Property(Base):
     name = Column(String)
     description = Column(Text)
     address = Column(String)
-    location = Column(Geometry(geometry_type='POLYGON', management=True))
+    location = Column(Geometry(geometry_type='POINT', management=True))
+    rent = Column(Float)
+    parking_fee = Column(Float)
+    size = Column(Float)  # squared meter
+    typ = Column(String)  # apartment/condo
+    included_utilities = Column(String)
+    excluded_utilities = Column(String)
+    archived = Column(Boolean)
+    date_available = Column(Date)
 
 
 def _load_spatialite(dbapi_conn, connection_record):
     dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension('mod_spatialite')
+    mod_spatialite_name = get_mod_spatialite_name()
+    dbapi_conn.load_extension(mod_spatialite_name)
 
 
 class DB:
@@ -38,3 +49,9 @@ class DB:
 
     def new_session(self):
         return self._sessionmaker()
+
+    @contextmanager
+    def session(self):
+        sess = self.new_session()
+        yield sess
+        sess.commit()

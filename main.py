@@ -1,11 +1,29 @@
+from datetime import datetime
 from mpr.db import DB, Property
+from mpr.extractor import MyDwellworksPropertiesExtractor
 
 
 if __name__ == '__main__':
     db = DB("sqlite:///mpr.db")
 
-    session = db.new_session()
+    extractor = MyDwellworksPropertiesExtractor()
+    raw_props = extractor.extract_properties()
 
-    prop = Property(name="WTF", location="POLYGON(0 0,1 0,1 1,0 1,0 0)")
-    session.add(prop)
-    session.commit()
+    with db.session() as sess:
+        for raw_prop in raw_props:
+            raw_pp = raw_prop['property']
+            prop = Property(
+                name=raw_pp['display_name'],
+                description=raw_pp['description'],
+                address=raw_pp['address'],
+                location='POINT(%f,%f)' % (raw_pp['longitude'], raw_pp['latitude']),
+                rent=raw_prop['rent'],
+                parking_fee=raw_pp['parking_fee'],
+                size=float(raw_pp['size'].split(';')[1].strip()),
+                typ=raw_pp['type'],
+                included_utilities=','.join(raw_pp['included_utilities'] or ''),
+                excluded_utilities=','.join(raw_pp['excluded_utilities'] or ''),
+                archived=raw_prop['archived'],
+                date_available=datetime.strptime(raw_prop['date_available'], '%Y-%m-%d'),
+            )
+            sess.add(prop)
