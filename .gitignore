@@ -1,4 +1,5 @@
 .venv
 *.py[cdo]
-*.db
 __pycache__
+config.yaml
+*.db

@@ -22,3 +22,7 @@ def get_mod_spatialite_name():
         ]).strip().decode('utf-8')
         return os.path.join(path, 'lib', 'mod_spatialite.so')
     return 'mod_spatialite'
+
+
+def get_db_connstr():
+    return "sqlite:///mpr.db"

@@ -1,12 +1,12 @@
 from contextlib import contextmanager
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Boolean, Integer, BigInteger, Float, String, Text, Date
+from sqlalchemy import Column, Boolean, Integer, Float, String, Text, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import select, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
-from .env import get_mod_spatialite_name
+from .env import get_mod_spatialite_name, get_db_connstr
 
 Base = declarative_base()
 
@@ -36,6 +36,8 @@ def _load_spatialite(dbapi_conn, connection_record):
 
 
 class DB:
+    _instance = None
+
     def __init__(self, conn_str, echo=True):
         engine = create_engine(conn_str, echo=echo)
         listen(engine, 'connect', _load_spatialite)
@@ -46,6 +48,12 @@ class DB:
         Base.metadata.create_all()
         self._engine = engine
         self._sessionmaker = sessionmaker(bind=engine)
+
+    @classmethod
+    def singleton(cls):
+        if cls._instance is None:
+            cls._instance = cls(get_db_connstr())
+        return cls._instance
 
     def new_session(self):
         return self._sessionmaker()
